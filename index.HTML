@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist de Inspección — Superficies de Trabajo</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue:#2E5C9A; --light:#D9E2F3; --line:#c7d2e6;
+    --ok:#1e7d44; --bg:#f4f6fb; --card:#ffffff; --txt:#1c2433; --muted:#6b7689; --err:#c0392b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.45;-webkit-text-size-adjust:100%}
+  #app{padding:14px;max-width:760px;margin:0 auto;display:none}
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:16px;padding:20px 18px;box-shadow:0 6px 18px rgba(31,56,100,.18)}
+  header h1{font-size:1.25rem;font-weight:800;letter-spacing:.2px}
+  header .tag{display:inline-block;margin-top:6px;font-size:.72rem;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;font-weight:600}
+  header p{font-size:.82rem;opacity:.92;margin-top:8px}
+  .bar{height:9px;background:#e4e9f4;border-radius:20px;margin:16px 0 4px;overflow:hidden}
+  .bar > span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--ok));border-radius:20px;transition:width .35s ease}
+  .pct{font-size:.78rem;color:var(--muted);text-align:right;margin-bottom:10px}
+  .meta{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .meta label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+  .meta input,.meta select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;background:#fbfcff;color:var(--txt)}
+  .meta .full{grid-column:1 / -1}
+  section.step{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+  section.step > h2{display:flex;align-items:center;gap:10px;background:var(--light);color:var(--navy);font-size:.96rem;font-weight:800;padding:12px 14px}
+  section.step > h2 .n{background:var(--navy);color:#fff;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.82rem;flex:none}
+  .item{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;border-top:1px solid #eef1f8;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .item:first-of-type{border-top:none}
+  .item input{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--blue);border-radius:6px;flex:none;margin-top:1px;position:relative;cursor:pointer;background:#fff}
+  .item input:checked{background:var(--ok);border-color:var(--ok)}
+  .item input:checked::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
+  .item span{font-size:.9rem;flex:1}
+  .item .ref{display:block;font-size:.7rem;color:var(--muted);margin-top:2px}
+  .item.done span{color:var(--muted);text-decoration:line-through}
+  .sign{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+  .sign label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .sign textarea,.sign input{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;margin-top:5px;font-size:.92rem;background:#fbfcff;font-family:inherit}
+  .sign textarea{min-height:64px;resize:vertical}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+  button{flex:1;min-width:120px;border:none;border-radius:11px;padding:13px;font-size:.9rem;font-weight:700;cursor:pointer}
+  .print{background:var(--navy);color:#fff}
+  .reset{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
+  .lock{background:#fff;color:var(--muted);border:1.5px solid var(--line);flex:none;min-width:auto;padding:13px 16px}
+  footer{text-align:center;font-size:.72rem;color:var(--muted);padding:10px 0 24px}
+  #gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy),var(--blue));display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .gatecard{background:#fff;border-radius:18px;padding:26px 22px;width:100%;max-width:360px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .gatelogo{width:58px;height:58px;border-radius:50%;background:var(--light);color:var(--navy);display:grid;place-items:center;font-size:1.5rem;margin:0 auto 14px}
+  .gatecard h2{font-size:1.12rem;color:var(--navy);font-weight:800}
+  .gatecard p#gsub{font-size:.82rem;color:var(--muted);margin:7px 0 16px}
+  .gatecard input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:1rem;text-align:center;letter-spacing:3px;margin-bottom:10px;background:#fbfcff}
+  .gatecard button{width:100%;background:var(--navy);color:#fff;margin-top:4px}
+  .gerr{color:var(--err);font-size:.8rem;min-height:18px;margin-top:8px;letter-spacing:0}
+  .gforgot{display:inline-block;margin-top:14px;font-size:.78rem;color:var(--blue);cursor:pointer;text-decoration:underline}
+  @media print{body{background:#fff}.actions,.bar,.pct{display:none}section.step,.meta,.sign{break-inside:avoid;border-color:#999}}
+</style>
+</head>
+<body>
+  <div id="gate">
+    <div class="gatecard">
+      <div class="gatelogo">🔒</div>
+      <h2 id="gtitle">Acceso</h2>
+      <p id="gsub"></p>
+      <input id="gpin" type="password" inputmode="numeric" placeholder="Clave" autocomplete="off">
+      <input id="gpin2" type="password" inputmode="numeric" placeholder="Repite la clave" autocomplete="off" style="display:none">
+      <button id="gbtn" onclick="gateSubmit()">Entrar</button>
+      <p class="gerr" id="gerr"></p>
+      <span class="gforgot" id="gforgot" onclick="gateForgot()" style="display:none">¿Olvidaste tu clave?</span>
+    </div>
+  </div>
+
+  <div id="app">
+  <header>
+    <span class="tag">INSPECCIÓN DE SEGURIDAD</span>
+    <h1>Checklist de Inspección de Superficies de Trabajo</h1>
+    <p>Pisos, plataformas, orden y limpieza, y herramientas. Base: DS N°594/99 (Art. 5°, 7° y 8°), RIC N°02 y NCh 1258.</p>
+  </header>
+
+  <div class="bar"><span id="fill"></span></div>
+  <div class="pct" id="pct">0% completado</div>
+
+  <div class="meta">
+    <div class="full"><label>Área / sector inspeccionado</label><input id="m_area" placeholder="Ej: Nave de producción / Plataforma N°2"></div>
+    <div><label>Inspector responsable</label><input id="m_resp" placeholder="Nombre"></div>
+    <div><label>Fecha y hora</label><input id="m_fecha" type="datetime-local"></div>
+    <div><label>Tipo de superficie</label><select id="m_tipo"><option value="">Seleccionar</option><option>Piso de concreto</option><option>Plataforma metálica</option><option>Rejilla metálica (grating)</option><option>Mesa / banco de trabajo</option><option>Mixto</option></select></div>
+    <div><label>N° de hallazgos</label><input id="m_hallazgos" type="number" min="0" placeholder="0"></div>
+  </div>
+
+  <section class="step" data-step="1"><h2><span class="n">1</span> Pisos y superficies de tránsito</h2></section>
+  <section class="step" data-step="2"><h2><span class="n">2</span> Plataformas metálicas y trabajo en altura</h2></section>
+  <section class="step" data-step="3"><h2><span class="n">3</span> Orden, limpieza y control de derrames</h2></section>
+  <section class="step" data-step="4"><h2><span class="n">4</span> Herramientas y maquinaria</h2></section>
+  <section class="step" data-step="5"><h2><span class="n">5</span> Cierre de la inspección</h2></section>
+
+  <div class="sign">
+    <label>Hallazgos y acciones correctivas (responsable y plazo)</label>
+    <textarea id="m_obs" placeholder="Describe los hallazgos detectados y las acciones a realizar..."></textarea>
+    <label style="margin-top:12px;display:block">Firma / nombre del inspector responsable</label>
+    <input id="m_firma" placeholder="Nombre y firma">
+  </div>
+
+  <div class="actions">
+    <button class="print" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <button class="reset" onclick="resetAll()">Reiniciar inspección</button>
+    <button class="lock" onclick="lockNow()" title="Bloquear acceso">🔒</button>
+  </div>
+
+  <footer>Checklist de Inspección · Prevención de Riesgos · Sistema MAAH</footer>
+  </div>
+
+<script>
+  /* ===== LOGIN (claves propias del módulo INSPECCION) ===== */
+  const AUTHKEY = "insp_auth_v1";
+  const MASTER = "1234";
+  let gmode = "login";
+  const $ = id => document.getElementById(id);
+  function getCode(){ try{ const v=localStorage.getItem(AUTHKEY); return v?atob(v):null; }catch(e){ return null; } }
+  function setCode(c){ try{ localStorage.setItem(AUTHKEY, btoa(c)); }catch(e){} }
+  function gateRender(){
+    const t=$("gtitle"), s=$("gsub"), p1=$("gpin"), p2=$("gpin2"), b=$("gbtn"), f=$("gforgot"), e=$("gerr");
+    e.textContent=""; p1.value=""; p2.value=""; p1.focus(); p2.style.display="none"; f.style.display="none";
+    if(gmode==="first"){ t.textContent="Primer ingreso"; s.textContent="Escribe la clave inicial para activar la checklist."; p1.placeholder="Clave inicial"; b.textContent="Continuar"; }
+    else if(gmode==="setcode"){ t.textContent="Crea tu clave de acceso"; s.textContent="Define una clave personal (mínimo 4 caracteres). Se te pedirá en los próximos ingresos."; p1.placeholder="Nueva clave"; p2.style.display="block"; p2.placeholder="Repite la clave"; b.textContent="Guardar y entrar"; }
+    else if(gmode==="reset"){ t.textContent="Restablecer clave"; s.textContent="Ingresa la clave maestra para definir una nueva clave personal."; p1.placeholder="Clave maestra"; b.textContent="Continuar"; }
+    else{ t.textContent="Acceso"; s.textContent="Ingresa tu clave de acceso."; p1.placeholder="Clave"; b.textContent="Entrar"; f.style.display="inline-block"; }
+  }
+  function gateSubmit(){
+    const e=$("gerr"), v=$("gpin").value.trim(), v2=$("gpin2").value.trim();
+    if(gmode==="first"||gmode==="reset"){ if(v===MASTER){ gmode="setcode"; gateRender(); } else e.textContent="Clave incorrecta."; }
+    else if(gmode==="setcode"){ if(v.length<4){ e.textContent="La clave debe tener al menos 4 caracteres."; return; } if(v!==v2){ e.textContent="Las claves no coinciden."; return; } setCode(v); unlock(); }
+    else{ if(v===getCode()) unlock(); else e.textContent="Clave incorrecta."; }
+  }
+  function gateForgot(){ gmode="reset"; gateRender(); }
+  function unlock(){ $("gate").style.display="none"; $("app").style.display="block"; }
+  function lockNow(){ $("app").style.display="none"; $("gate").style.display="flex"; gmode=getCode()?"login":"first"; gateRender(); }
+  $("gpin").addEventListener("keydown",e=>{if(e.key==="Enter")gateSubmit();});
+  $("gpin2").addEventListener("keydown",e=>{if(e.key==="Enter")gateSubmit();});
+  gmode = getCode() ? "login" : "first"; gateRender();
+
+  /* ===== CHECKLIST DE INSPECCIÓN ===== */
+  const ITEMS = {
+    1:[["Piso sólido, sin fisuras ni desniveles peligrosos","DS N°594, Art. 5°"],
+       ["Superficie no resbaladiza o con tratamiento antideslizante","DS N°594, Art. 5°"],
+       ["Pisos y pasillos de tránsito libres de obstáculos","DS N°594, Art. 7°"],
+       ["Espacio de circulación entre máquinas ≥ 150 cm","DS N°594, Art. 8°"],
+       ["Señalización de zonas de riesgo visible y vigente",""]],
+    2:[["Plataforma sin deformaciones ni corrosión que afecte su resistencia",""],
+       ["Superficie antideslizante (rejilla/grating en buen estado)",""],
+       ["Barandas y rodapié instalados, completos y firmes",""],
+       ["Sistema de detención de caídas disponible y certificado","NCh 1258"],
+       ["Acceso seguro: escalera o peldaños en buen estado",""]],
+    3:[["Ausencia de derrames de aceite o líquidos sobre la superficie","DS N°594, Art. 5°"],
+       ["Sistema de drenaje o bandeja de contención operativo","DS N°594, Art. 5°"],
+       ["Área ordenada, sin residuos ni materiales fuera de lugar",""],
+       ["Iluminación suficiente en la zona de trabajo","RIC N°02, 5.4.6"]],
+    4:[["Herramientas eléctricas sin daños (carcasa, cable y enchufe)",""],
+       ["Maquinaria con protecciones de partes móviles en su lugar",""],
+       ["Verificación preuso de máquinas y herramientas realizada",""],
+       ["Herramientas dañadas retiradas de servicio y etiquetadas",""],
+       ["Calzado de seguridad antideslizante certificado en uso","DS N°18/1982; DS N°594, Art. 53"]],
+    5:[["Hallazgos registrados con su ubicación",""],
+       ["Acciones correctivas asignadas con responsable y plazo",""],
+       ["Condiciones críticas señalizadas o intervenidas de inmediato",""]]
+  };
+  const KEY = "insp_checklist_v1";
+  document.querySelectorAll("section.step").forEach(sec=>{
+    const s = sec.dataset.step;
+    ITEMS[s].forEach((it,i)=>{
+      const id = `c_${s}_${i}`;
+      const row = document.createElement("label");
+      row.className = "item"; row.setAttribute("for",id);
+      row.innerHTML = `<input type="checkbox" id="${id}"><span>${it[0]}${it[1]?`<span class="ref">${it[1]}</span>`:""}</span>`;
+      sec.appendChild(row);
+    });
+  });
+  const checks = [...document.querySelectorAll('.item input')];
+  const fields = ["m_area","m_resp","m_fecha","m_tipo","m_hallazgos","m_obs","m_firma"];
+  function update(){
+    const done = checks.filter(c=>c.checked).length;
+    const pc = Math.round(done/checks.length*100);
+    $("fill").style.width = pc+"%";
+    $("pct").textContent = pc+"% completado ("+done+"/"+checks.length+")";
+    checks.forEach(c=>c.closest(".item").classList.toggle("done",c.checked));
+    save();
+  }
+  function save(){ const data={ch:{},f:{}}; checks.forEach(c=>data.ch[c.id]=c.checked); fields.forEach(f=>data.f[f]=$(f).value); try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){} }
+  function load(){ try{ const d=JSON.parse(localStorage.getItem(KEY)||"{}"); if(d.ch) checks.forEach(c=>{if(d.ch[c.id]) c.checked=true;}); if(d.f) fields.forEach(f=>{if(d.f[f]!=null) $(f).value=d.f[f];}); }catch(e){} update(); }
+  function resetAll(){ if(!confirm("¿Reiniciar la inspección y borrar los datos?")) return; checks.forEach(c=>c.checked=false); fields.forEach(f=>$(f).value=""); try{localStorage.removeItem(KEY);}catch(e){} update(); }
+  checks.forEach(c=>c.addEventListener("change",update));
+  fields.forEach(f=>$(f).addEventListener("input",save));
+  load();
+</script>
+</body>
+</html>
